@@ -20,6 +20,7 @@ import com.mdtalalwasim.ecommerce.service.CategoryService;
 import com.mdtalalwasim.ecommerce.service.UserService;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/user")
@@ -64,19 +65,43 @@ public class UserController {
 	
 	//ADD TO CART Module
 	@GetMapping("/add-to-cart")
-	String addToCart(@RequestParam Long productId, @RequestParam Long userId, HttpSession session) {
+	String addToCart(@RequestParam Long productId, @RequestParam Long userId,
+					 @RequestParam(defaultValue = "1") int quantity, HttpSession session,
+					 HttpServletRequest request, Principal principal) {
 		System.out.println("INSIDE ITS");
-		Cart saveCart = cartService.saveCart(productId, userId);
-		
+
+		String redirectTarget = "/product/" + productId;
+		if (principal != null) {
+			User currentUser = userService.getUserByEmail(principal.getName());
+			if (currentUser != null && "ROLE_ADMIN".equals(currentUser.getRole())) {
+				String referer = request.getHeader("Referer");
+				if (!ObjectUtils.isEmpty(referer)) {
+					redirectTarget = "redirect:" + referer;
+				} else {
+					redirectTarget = "redirect:" + redirectTarget;
+				}
+			} else {
+				redirectTarget = "redirect:" + redirectTarget;
+			}
+		} else {
+			redirectTarget = "redirect:" + redirectTarget;
+		}
+
+		if (quantity <= 0) {
+			session.setAttribute("errorMsg", "Quantity must be at least 1.");
+			return redirectTarget;
+		}
+		Cart saveCart = cartService.saveCart(productId, userId, quantity);
+
 		//System.out.println("save Cart is :"+saveCart);
 		if(ObjectUtils.isEmpty(saveCart)) {
 			System.out.println("INSIDE Error");
-			session.setAttribute("errorMsg", "Failed Product add to Cart");
+			session.setAttribute("errorMsg", "Requested quantity is unavailable.");
 		}else {
 			session.setAttribute("successMsg", "Successfully, Product added to Cart");
 		}
 		System.out.println("pid"+productId+" uid:"+userId);
-		return "redirect:/product/" + productId;
+		return redirectTarget;
 	}
 	
 	@GetMapping("/cart")
@@ -97,9 +122,13 @@ public class UserController {
 	}
 
 	@GetMapping("/cart-quantity-update")
-	public String updateCartQuantity(@RequestParam("symbol") String symbol , @RequestParam("cartId") Long cartId){
+	public String updateCartQuantity(@RequestParam("symbol") String symbol , @RequestParam("cartId") Long cartId,
+									 HttpSession session){
 		System.out.println(symbol+ " " + cartId);
 		Boolean f = cartService.updateCartQuantity(symbol, cartId);
+		if (!Boolean.TRUE.equals(f) && symbol.equalsIgnoreCase("increase")) {
+			session.setAttribute("errorMsg", "Requested quantity is unavailable.");
+		}
 		return "redirect:/user/cart";
 	}
 
@@ -111,22 +140,21 @@ public class UserController {
 	
 	
 	@GetMapping("/orders")
-	public String orderPage(Principal principal, Model model) {
-		//when load cart, it is showing logged in user cart details:
-		
-		
-				User user = getLoggedUserDetails(principal);
-				List<Cart> carts = cartService.getCartsByUser(user.getId());
-				model.addAttribute("carts", carts);
-				if(carts.size() > 0) {
-					Double orderPrice = carts.get(carts.size()-1).getTotalOrderPrice();
-					Double totalOrderPrice = carts.get(carts.size()-1).getTotalOrderPrice()+ 250+ 100;
-					model.addAttribute("orderPrice", orderPrice);
-					model.addAttribute("totalOrderPrice", totalOrderPrice);
-				}
-		return "/user/order";
-	}
+	public String orderPage(Principal principal, HttpSession session) {
+		User user = getLoggedUserDetails(principal);
+		boolean checkedOut = cartService.checkoutCart(user.getId());
+		if (!checkedOut) {
+			session.setAttribute("errorMsg", "Your cart is empty.");
+			return "redirect:/user/cart";
+		}
+		session.setAttribute("successMsg", "Order placed successfully.");
+		return "redirect:/user/order-success";
+		}
 
+	@GetMapping("/order-success")
+	public String orderSuccess() {
+		return "/user/order-success";
+	}
 
 
 	

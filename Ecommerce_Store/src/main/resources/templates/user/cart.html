@@ -12,7 +12,7 @@
 			
 			<div class="row">
 				<div class="col-md-4">
-					<a th:href="@{'/admin/add-product'}" class="btn btn-danger mb-3">Add Product</a>
+					<a th:href="@{'/products'}" class="btn btn-danger mb-3">Add Product</a>
 				</div>
 			</div>
 			
@@ -67,22 +67,22 @@
 										<th scope="row">[[${count.count}]]</th>
 										<td><img th:src="@{'/img/product_image/'+${cart.product.productImage}}" width="50px;" height="50px;"></td>
 										<td>[[${cart.product.productTitle}]]</td>
-										<td>[[${cart.product.discountPrice}]]</td>
+										<td>[[${#numbers.formatDecimal(cart.product.discountPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
 										
 										<td class="text-center"><a th:href="@{'/user/cart-quantity-update?symbol=decrease&cartId='+${cart.id}}" style="text-decoration:none;">
 										<i class="fa-solid fa-minus"></i></a> [ [[${cart.quantity}]] ] 
 										<a th:href="@{'/user/cart-quantity-update?symbol=increase&cartId='+${cart.id}}" style="text-decoration:none;"><i class="fa-solid fa-plus"></i></a>
 										</td>
-										
-										<td>[[${cart.totalPrice}]]</td>
+
+										<td>[[${#numbers.formatDecimal(cart.totalPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
 										
 										
 									</tr>
-									
-									<tr>
+
+									<tr th:if="${carts.size > 0}">
 										<td colspan="4"></td>
 										<td class="fw-bold">Total Price</td>
-										<td class="fw-bold">&#2547; [[${totalOrderPrice}]]</td>
+										<td class="fw-bold">$ [[${#numbers.formatDecimal(totalOrderPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
 									</tr>
 									
 								</tbody>

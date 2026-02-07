@@ -28,7 +28,11 @@
 
 
 						<!-- Bootstrap Toast -->
-						
+						<div class="mb-3">
+							<a th:href="@{/products}" class="btn btn-success text-white">
+								Go Back
+							</a>
+						</div>
 						<div class="toast-container position-fixed top-0 end-0 p-3">
 							<div class="toast " role="alert" aria-live="assertive"
 								aria-atomic="true">
@@ -40,7 +44,7 @@
 										aria-label="Close"></button>
 								</div>
 								<div class="toast-body"><b>[[${session.successMsg}]]</b></div>
-								<th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
+								<th:block th:with="ignore=${@commonServiceImpl.removeSessionMessage()}"></th:block>
 							</div>
 						</div>
 						
@@ -103,10 +107,15 @@
 								Category: [[${product.productCategory}]] <br>Policy: 7 Days Replacement & Return
 							</p>
 							<p class="fs-5 fw-bold">
-								Price: &nbsp; &nbsp; &nbsp; &nbsp; <i
-									class="fa-solid fa-bangladeshi-taka-sign"></i> [[${product.discountPrice}]] <span
-									class="fs-6 text-decoration-line-through text-secondary">[[${product.productPrice}]]</span>
-								<span class="fs-6 text-success">[[${product.discount}]]% Off</span>
+								Price: $
+								<th:block th:if="${product.discount > 0}">
+									[[${#numbers.formatDecimal(product.discountPrice, 1, 'COMMA', 2, 'POINT')}]]
+									<span class="fs-6 text-decoration-line-through text-secondary"> [[${#numbers.formatDecimal(product.productPrice, 1, 'COMMA', 2, 'POINT')}]]</span>
+									<span class="fs-6 text-success">[[${product.discount}]]% Off</span>
+								</th:block>
+								<th:block th:unless="${product.discount > 0}">
+									[[${#numbers.formatDecimal(product.productPrice, 1, 'COMMA', 2, 'POINT')}]]
+								</th:block>
 							</p>
 							<div class="row">
 								<div class="col-md-4 text-success text-center p-2">
@@ -129,7 +138,22 @@
 									
 									<!-- user is logged in this is coming from:  Global ModelAttribute Method-->
 									<th:block th:unless="${currentLoggedInUserDetails ==null}">
-										<a th:href="@{'/user/add-to-cart?productId='+${product.id}+'&userId='+${currentLoggedInUserDetails.id}}" class="btn btn-danger col-md-12">Add To Cart</a>
+										<th:block th:if="${currentLoggedInUserDetails.role == 'ROLE_ADMIN'}">
+											<button type="button" class="btn btn-secondary col-md-12" disabled>Add To Cart</button>
+										</th:block>
+										<th:block th:unless="${currentLoggedInUserDetails.role == 'ROLE_ADMIN'}">
+											<form th:action="@{/user/add-to-cart}" method="get">
+												<input type="hidden" name="productId" th:value="${product.id}">
+												<input type="hidden" name="userId" th:value="${currentLoggedInUserDetails.id}">
+												<div class="input-group mb-3">
+													<button class="btn btn-outline-secondary" type="button" onclick="decreaseQty()">-</button>
+													<input type="number" class="form-control text-center" name="quantity"
+														   id="productQty" min="1" th:max="${product.productStock}" value="1">
+													<button class="btn btn-outline-secondary" type="button" onclick="increaseQty()">+</button>
+												</div>
+												<button type="submit" class="btn btn-danger col-md-12">Add To Cart</button>
+											</form>
+										</th:block>
 									</th:block>
 								</th:block>
 								<th:block th:unless="${product.productStock > 0}">
@@ -143,9 +167,24 @@
 				</div>
 			</div>
 		</div>
+		<script>
+			const qtyInput = () => document.getElementById('productQty');
+			function decreaseQty() {
+				const input = qtyInput();
+				const value = parseInt(input.value || '1', 10);
+				if (value > 1) {
+					input.value = value - 1;
+				}
+			}
+			function increaseQty() {
+				const input = qtyInput();
+				const value = parseInt(input.value || '1', 10);
+				const max = parseInt(input.getAttribute('max') || '1', 10);
+				if (value < max) {
+					input.value = value + 1;
+				}
+			}
+		</script>
 	</section>
-	
-	
-	
 </body>
 </html>

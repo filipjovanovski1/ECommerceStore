@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base::layout(~{::section})}">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Success</title>
+</head>
+<body>
+<section>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card custom-card-shadow text-center">
+                    <div class="card-body p-5">
+                        <h2 class="mb-3">Order Placed Successfully!</h2>
+                        <p class="text-muted mb-4">Thank you for your purchase.</p>
+                        <a href="/" class="btn btn-danger">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

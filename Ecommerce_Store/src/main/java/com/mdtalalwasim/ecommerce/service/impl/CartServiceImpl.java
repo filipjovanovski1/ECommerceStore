@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,7 @@ public class CartServiceImpl implements CartService{
 	UserRepository userRepository;
 	
 	@Override
-	public Cart saveCart(Long productId, Long userId) {
+	public Cart saveCart(Long productId, Long userId, int quantity) {
 		
 		User user = userRepository.findById(userId).get();
 		Product product = productRepository.findById(productId).get();
@@ -41,18 +43,27 @@ public class CartServiceImpl implements CartService{
 		Cart cartStatus = cartRepository.findByProductIdAndUserId(productId, userId);
 		
 		Cart cart = null;
-		
+
+		int existingQuantity = 0;
+		if (!ObjectUtils.isEmpty(cartStatus)) {
+			existingQuantity = cartStatus.getQuantity();
+		}
+		int updatedQuantity = existingQuantity + quantity;
+		if (updatedQuantity > product.getProductStock()) {
+			return null;
+		}
+
 		if(ObjectUtils.isEmpty(cartStatus)) {
 			//cart Is empty - so add product to Cart
 			cart = new Cart();
 			cart.setUser(user);
 			cart.setProduct(product);
-			cart.setQuantity(1);
-			cart.setTotalPrice(1 * product.getDiscountPrice());
+			cart.setQuantity(quantity);
+			cart.setTotalPrice(quantity * product.getDiscountPrice());
 		}else {
 			//cart Is holding product. so increases the quantity of the existing product.
 			cart =cartStatus;
-			cart.setQuantity(cart.getQuantity()+1);
+			cart.setQuantity(updatedQuantity);
 			cart.setTotalPrice(cart.getQuantity() * cart.getProduct().getDiscountPrice());
 		}
 		Cart saveCart = cartRepository.save(cart);
@@ -72,11 +83,11 @@ public class CartServiceImpl implements CartService{
 		// we need to fetch it
 	 List<Cart> updatedCartList = new ArrayList<>();
 		for (Cart cart : carts) {
-			Double totalPrice = (cart.getProduct().getDiscountPrice() * cart.getQuantity());
+			Double totalPrice = roundTwoDecimals(cart.getProduct().getDiscountPrice() * cart.getQuantity());
 			cart.setTotalPrice(totalPrice);
 			System.out.println("totalPrice is :"+totalPrice);
 			
-			totalOrderPrice = totalOrderPrice + totalPrice;
+			totalOrderPrice = roundTwoDecimals(totalOrderPrice + totalPrice);
 			
 			cart.setTotalOrderPrice(totalOrderPrice);
 			System.out.println("totalOrderPrice is :"+totalOrderPrice);
@@ -110,15 +121,47 @@ public class CartServiceImpl implements CartService{
 				
 			}else {
 				Integer dbQty = cart.get().getQuantity();
-				quantity	= dbQty + 1;
+				int updatedQuantity = dbQty + 1;
+				if (updatedQuantity > cart.get().getProduct().getProductStock()) {
+					return false;
+				}
+				quantity = updatedQuantity;
 			}
 			cart.get().setQuantity(quantity);
 			cartRepository.save(cart.get());
+
+			return true;
 		}
 		
 		
 		
 		return false;
+	}
+
+	private Double roundTwoDecimals(Double value) {
+		return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
+	}
+
+	@Override
+	@Transactional
+	public boolean checkoutCart(Long userId) {
+		List<Cart> carts = cartRepository.findByUserId(userId);
+		if (carts.isEmpty()) {
+			return false;
+		}
+
+		for (Cart cart : carts) {
+			Product product = cart.getProduct();
+			int updatedStock = product.getProductStock() - cart.getQuantity();
+			if (updatedStock < 0) {
+				updatedStock = 0;
+			}
+			product.setProductStock(updatedStock);
+			productRepository.save(product);
+		}
+
+		cartRepository.deleteByUserId(userId);
+		return true;
 	}
 
 }

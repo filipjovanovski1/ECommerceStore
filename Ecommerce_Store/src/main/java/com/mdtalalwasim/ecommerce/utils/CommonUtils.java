@@ -14,11 +14,16 @@ import jakarta.servlet.http.HttpServletRequest;
 @Component
 public class CommonUtils {
 	
-	@Autowired
+	@Autowired(required = false)
 	private JavaMailSender mailSender;
 	
 	public Boolean sendEmail(String url, String reciepentEmail) throws UnsupportedEncodingException, MessagingException {
-		
+
+		if (mailSender == null) {
+			System.out.println("Mail disabled: JavaMailSender not configured.");
+			return true;
+		}
+
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper messagehelper = new MimeMessageHelper(message);
 		

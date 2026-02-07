@@ -113,14 +113,16 @@ public class HomeViewController {
 	}
 	
 	@GetMapping("/products")
-	public String product(Model model, @RequestParam(name= "category", defaultValue = "") String category) {
-		//System.out.println("Category="+category);
+	public String product(Model model,
+						  @RequestParam(name= "category", defaultValue = "") String category,
+						  @RequestParam(name= "search", defaultValue = "") String search) {
 		
 		List<Category> allActiveCategory = categoryService.findAllActiveCategory();
-		List<Product> allActiveProducts = productService.findAllActiveProducts(category);
+		List<Product> allActiveProducts = productService.findAllActiveProducts(category, search);
 		model.addAttribute("allActiveCategory", allActiveCategory);
 		model.addAttribute("allActiveProducts", allActiveProducts);
 		model.addAttribute("paramValue", category);
+		model.addAttribute("searchValue", search);
 		return "product";
 	}	
 	

@@ -98,134 +98,22 @@
 		<!-- End of Category -->
 		<!-- new modifications for Clothing store -->
 		<div class="container">
-			<div class="row">
+			<div class="row justify-content-center">
 				<p class="text-center fs-4 mt-5 mb-5">Category</p>
-				<div class="col-md-2" th:each="category: ${latestSixActiveCategory}">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" th:src="@{'/img/category/'+${category.categoryImage}}" width="100%" height="130px">
-						<p><b>[[${category.categoryName}]]</b></p>
-						</div>
+				<div class="col-md-2 col-sm-4 col-6" th:each="category: ${latestSixActiveCategory}">
+					<a th:href="@{'/products?category='+${category.categoryName}}" class="text-decoration-none text-dark">
+						<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded h-100">
+							<div class="card-body text-center">
+								<img alt="" th:src="@{'/img/category/'+${category.categoryImage}}" width="100%" height="130px">
+								<p><b>[[${category.categoryName}]]</b></p>
+							</div>
+							</div>
+						</a>
 					</div>
-					
-				</div>
-				
-				<!-- <div class="col-md-2">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" src="img/category/FormalShirt.jpg" width="100%" height="130px">
-						<p><b>Formal Shirt</b></p>
-						</div>
-					</div>
-				</div>
-				
-				<div class="col-md-2">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" src="img/category/panjabi.jpg" width="100%" height="130px">
-						<p><b>Panjabi</b></p>
-						</div>
-					</div>
-				</div>
-				
-				<div class="col-md-2">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" src="img/category/Pant.jpg" width="100%" height="130px">
-						<p><b>Pant</b></p>
-						</div>
-					</div>
-				</div>
-				
-				<div class="col-md-2">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" src="img/category/Blazer.jpg" width="100%" height="130px">
-						<p><b>Blazer</b></p>
-						</div>
-						
-					</div>
-				</div>
-				
-				<div class="col-md-2">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" src="img/category/KnitWear.jpg" width="100%" height="130px">
-						<p><b>Knit Wear</b></p>
-						</div>
-					</div>
-				</div> -->
-				
-				<!-- <div class="col-md-2">
-					<div class="card rounded-circle shadow-sm p-3 mb-5 bg-white rounded">
-						<div class="card-body text-center">
-						<img alt="" src="img/category/beauty.png" width="95%" height="140px">
-						<p>Accessories</p>
-						</div>
-					</div>
-				</div> -->
-				
+				</a>
 			</div>
 		</div>
-		<!-- new modifications for Clothing store -->
-		
-		<!-- Start Latest Product Module -->
-		<!-- <div class="container-fluid bg-light p-3">
-			<p class="text-center fs-4">Latest Product</p>
 
-			<div class="row">
-				
-				<div class="col-md-3">
-				<div class="card shadow-sm p-3 mb-5 bg-white rounded">
-					<div class="card-body text-center">
-						<img alt="" src="img/product_image/laptop.png" width="65%"
-							height="140px">
-						<p class="text-center">HP Laptop</p>
-					</div>
-				</div>
-			</div>
-			
-			
-			<div class="col-md-3">
-				<div class="card shadow-sm p-3 mb-5 bg-white rounded">
-					<div class="card-body text-center">
-						<img alt="" src="img/product_image/laptop.png" width="65%"
-							height="140px">
-						<p class="text-center">HP Laptop</p>
-					</div>
-				</div>
-			</div>
-			
-			
-			<div class="col-md-3">
-				<div class="card shadow-sm p-3 mb-5 bg-white rounded">
-					<div class="card-body text-center">
-						<img alt="" src="img/product_image/laptop.png" width="65%"
-							height="140px">
-						<p class="text-center">HP Laptop</p>
-					</div>
-				</div>
-			</div>
-			
-			
-			<div class="col-md-3">
-				<div class="card shadow-sm p-3 mb-5 bg-white rounded">
-					<div class="card-body text-center">
-						<img alt="" src="img/product_image/laptop.png" width="65%"
-							height="140px">
-						<p class="text-center">HP Laptop</p>
-					</div>
-				</div>
-			</div>
-				
-				
-			</div>
-
-
-		</div> -->
-		<!-- End of the Latest Product Module -->
-		
-		<!-- Latest Product for Clothing Store -->
 		
 		<div class="container-fluid bg-light p-3">
 			<p class="text-center fs-4">Latest Product</p>
@@ -233,12 +121,16 @@
 			<div class="row">
 				
 				<div class="col-md-3" th:each="product: ${latestEightActiveProducts}">
-				<div class="card shadow-sm p-3 mb-5 bg-white rounded">
-					<div class="card-body text-center">
-						<img alt="" th:src="@{'/img/product_image/'+${product.productImage}}" width="60%"
-							height="140px">
-						<p class="text-center"><b>[[${product.productTitle}]]</b></p>
-					</div>
+					<a th:href="@{'/product/'+${product.id}}" class="text-decoration-none text-dark">
+						<div class="card shadow-sm p-3 mb-5 bg-white rounded">
+
+							<div class="card-body text-center">
+								<img alt="" th:src="@{'/img/product_image/'+${product.productImage}}" width="60%"
+									 height="140px">
+								<p class="text-center"><b>[[${product.productTitle}]]</b></p>
+							</div>
+						</div>
+					</a>
 				</div>
 			</div>
 			

@@ -71,9 +71,9 @@
 										<td><img th:src="@{'/img/product_image/'+${product.productImage}}" width="50px;" height="50px;"></td>
 										<td>[[${product.productTitle}]]</td>
 										<td>[[${product.productCategory}]]</td>
-										<td>[[${product.productPrice}]]</td>
+										<td>[[${#numbers.formatDecimal(product.productPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
 										<td>[[${product.discount}]]</td>
-										<td>[[${product.discountPrice}]]</td>
+										<td>[[${#numbers.formatDecimal(product.discountPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
 										<td>[[${product.isActive}]]</td>
 										<td>[[${product.productStock}]]</td>
 										<td>

@@ -18,4 +18,6 @@ public interface CartRepository extends JpaRepository<Cart, Long>{
 	public Long countByUserId(Long userId);
 
 	public List<Cart> findByUserId(Long userId);
+
+	public void deleteByUserId(Long userId);
 }

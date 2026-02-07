@@ -8,7 +8,7 @@ import com.mdtalalwasim.ecommerce.service.CommonService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-@Service
+@Service("commonServiceImpl")
 public class CommonServiceImpl implements CommonService {
 
 	@Override

@@ -54,6 +54,22 @@ public class ProductServiceImpl implements ProductService{
 	}
 
 	@Override
+	public List<Product> findAllActiveProducts(String category, String search) {
+		String normalizedSearch = ObjectUtils.isEmpty(search) ? "" : search.trim();
+		String normalizedCategory = ObjectUtils.isEmpty(category) ? "" : category.trim();
+		if(ObjectUtils.isEmpty(normalizedSearch)) {
+			return findAllActiveProducts(normalizedCategory);
+		}
+		if(ObjectUtils.isEmpty(normalizedCategory)) {
+			return productRepository.findByIsActiveTrueAndProductTitleContainingIgnoreCase(normalizedSearch);
+		}
+		return productRepository
+				.findByIsActiveTrueAndProductCategoryAndProductTitleContainingIgnoreCase(
+						normalizedCategory, normalizedSearch);
+	}
+
+
+	@Override
 	public Optional<Product> findById(long id) {
 		// TODO Auto-generated method stub
 		return Optional.empty();

@@ -65,7 +65,8 @@
 
 									<div class="mb-3 col">
 										<label>Discount Price</label> <input type="text" readonly="readonly"
-											class="form-control" th:value="${product.discountPrice}">
+																			 class="form-control"
+																			 th:value="${#numbers.formatDecimal(product.discountPrice, 1, 'COMMA', 2, 'POINT')}">
 									</div>
 								</div>
 								

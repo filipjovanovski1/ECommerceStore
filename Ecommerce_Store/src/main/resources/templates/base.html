@@ -58,8 +58,7 @@
 						class="nav-link active dropdown-toggle" href="#" role="button"
 						data-bs-toggle="dropdown" aria-expanded="false"> Category </a>
 						<ul class="dropdown-menu">
-							<li th:each="cat: ${allActiveCategory}"><a class="dropdown-item" th:href="@{'products?category='+${cat.categoryName}}">[[${cat.categoryName}]]</a></li>
-							
+							<li th:each="cat: ${allActiveCategory}"><a class="dropdown-item" th:href="@{'/products?category='+${cat.categoryName}}">[[${cat.categoryName}]]</a></li>
 						</ul>
 					</li>
 					
@@ -73,24 +72,20 @@
 							aria-current="page" href="/signin"><i class="fa-solid fa-right-to-bracket"></i> LOGIN</a></li>
 						<li class="nav-item"><a class="nav-link active"
 							aria-current="page" href="/register">REGISTER</a></li>
-						<li class="nav-item"><a class="nav-link active"
-							aria-current="page" href="/admin/">ADMIN</a></li>
 					</th:block>
 
 					<th:block th:if="${currentLoggedInUserDetails != null}">
-						<li class="nav-item"><a class="nav-link active"
-							aria-current="page" href="/user/cart"><i class="fas fa-cart-shopping"></i> Cart [ [[${countCartForUser}]] ]</a></li>
-						
-						<li class="nav-item dropdown">
+						<li class="nav-item" th:if="${currentLoggedInUserDetails.role != 'ROLE_ADMIN'}">
+							        <a class="nav-link active" aria-current="page" href="/user/cart">
+							            <i class="fas fa-cart-shopping"></i> Cart [ [[${countCartForUser}]] ]
+							        </a>
+							    </li>
 						
 						<a class="nav-link active dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> 
 							<i class="fas fa-user-check"></i> [[${currentLoggedInUserDetails.name}]] </a>
 							
 							<ul class="dropdown-menu">
 								<li><a class="dropdown-item" href="/admin/">Dashboard</a></li>
-								<li><a class="dropdown-item" href="#">Profile</a></li>
-								<li><a class="dropdown-item" href="#">Another Action</a></li>
-								
 							</ul>
 						</li>
 					
@@ -108,8 +103,8 @@
 
 	<!-- start footer -->
 	<div class="container-fluid p-1 bg-danger text-center text-white" style="margin-top: 200px;">
-		<p class="mt-2"><i><b>RED WINGS</b></i><br><a href="https://github.com/mdtalalwasim" style="text-decoration:none; color:white;" target="_blank">Md. Talal Wasim</a><br>Copyright &copy; 2024. All rights Reserved</p>
-	</div>	
+		<p class="mt-2"><i><b>RED WINGS</b></i><br>Copyright &copy; 2024. All rights Reserved</p>
+	</div>
 	<!-- End footer -->
 
 	<!-- Initialize Toast -->

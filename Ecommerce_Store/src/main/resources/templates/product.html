@@ -28,9 +28,9 @@ element.style {
 		<div class="container-fluid bg-danger p-5">
 			<div class="row">
 				<div class="col-md-8 offset-md-2">
-					<form action="">
+					<form th:action="@{/products}" method="get">
 						<div class="input-group">
-							<input class="form-control" type="text" name="search">
+							<input class="form-control" type="text" name="search" th:value="${searchValue}">
 							<button class="btn btn-light text-dark ms-3 col-md-2" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search Product</button>
 						</div>
 					</form>
@@ -79,11 +79,16 @@ element.style {
 
 											<div class="row text-center">
 												<p class="fs-6 fw-bold">
-													<span>&#2547; [[${product.discountPrice}]]</span><br>
-													<span class="text-decoration-line-through text-secondary">
-														&#2547; [[${product.productPrice}]]</span> 
-													<span class="fs-6 text-success">[[${product.discount}]] %
-														Off</span>
+													<th:block th:if="${product.discount > 0}">
+														<span>$ [[${#numbers.formatDecimal(product.discountPrice, 1, 'COMMA', 2, 'POINT')}]]</span><br>
+														<span class="text-decoration-line-through text-secondary">
+															$ [[${#numbers.formatDecimal(product.productPrice, 1, 'COMMA', 2, 'POINT')}]]</span>
+														<span class="fs-6 text-success">[[${product.discount}]] %
+															Off</span>
+													</th:block>
+													<th:block th:unless="${product.discount > 0}">
+														<span>$ [[${#numbers.formatDecimal(product.productPrice, 1, 'COMMA', 2, 'POINT')}]]</span>
+													</th:block>
 												</p>
 												<a th:href="@{'/product/'+${product.id}}"
 													class="btn btn-danger col-md-6 offset-md-3 ">Details</a>
@@ -93,7 +98,7 @@ element.style {
 								</div>
 							</th:block>
 							<th:block th:unless="${allActiveProducts.size > 0}">
-								<p class="fs-3 text-danger mt-3 text-center">No Products Found for this category!</p>
+								<p class="fs-3 text-danger mt-3 text-center">No Products Found.</p>
 							</th:block>
 							
 								
