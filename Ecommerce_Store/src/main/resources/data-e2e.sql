@@ -46,6 +46,84 @@ values (
            current_timestamp,
            current_timestamp
        );
+
+insert into users (
+    name,
+    mobile,
+    email,
+    address,
+    city,
+    state,
+    pin_code,
+    password,
+    profile_image,
+    role,
+    is_enable,
+    account_status_non_locked,
+    accountfailed_attempt_count,
+    account_lock_time,
+    reset_tokens,
+    created_at,
+    updated_at
+)
+values (
+           'Unlock User',
+           '073000002',
+           'unlock.user@example.com',
+           'Unlock Street 1',
+           'Skopje',
+           'Centar',
+           '1000',
+           '$2b$12$1YyGR7F7ewFpEQnRbxJ/p.J3PM0ZYDPmYB.6A/QKWF0Mz.Ha/zRpK',
+           'default.jpg',
+           'ROLE_USER',
+           true,
+           false,
+           3,
+           DATEADD('MINUTE', -20, CURRENT_TIMESTAMP),
+           null,
+           current_timestamp,
+           current_timestamp
+       );
+insert into users (
+    name,
+    mobile,
+    email,
+    address,
+    city,
+    state,
+    pin_code,
+    password,
+    profile_image,
+    role,
+    is_enable,
+    account_status_non_locked,
+    accountfailed_attempt_count,
+    account_lock_time,
+    reset_tokens,
+    created_at,
+    updated_at
+)
+values (
+           'Locked User',
+           '073000002',
+           'locked.user@example.com',
+           'Locked Street 1',
+           'Skopje',
+           'Centar',
+           '1000',
+           '$2b$12$1YyGR7F7ewFpEQnRbxJ/p.J3PM0ZYDPmYB.6A/QKWF0Mz.Ha/zRpK',
+           'default.jpg',
+           'ROLE_USER',
+           true,
+           false,
+           3,
+           current_timestamp,
+           null,
+           current_timestamp,
+           current_timestamp
+       );
+
 insert into product (
     product_title,
     product_description,
@@ -68,6 +146,85 @@ values (
            'white-shirt.png',
            10,
            9.89,
+           true,
+           current_timestamp,
+           current_timestamp
+       );
+
+insert into product (
+    product_title,
+    product_description,
+    product_category,
+    product_price,
+    product_stock,
+    product_image,
+    discount,
+    discount_price,
+    is_active,
+    created_at,
+    updated_at
+)
+values (
+           'White Jeans',
+           'Seeded E2E product for search keyword coverage.',
+           'Shirts',
+           24.99,
+           8,
+           'white-shirt.png',
+           0,
+           24.99,
+           true,
+           current_timestamp,
+           current_timestamp
+       );
+insert into product (
+    product_title,
+    product_description,
+    product_category,
+    product_price,
+    product_stock,
+    product_image,
+    discount,
+    discount_price,
+    is_active,
+    created_at,
+    updated_at
+)
+values (
+           'White Shorts',
+           'Seeded E2E product for search keyword coverage.',
+           'Shirts',
+           19.99,
+           6,
+           'white-shirt.png',
+           0,
+           19.99,
+           true,
+           current_timestamp,
+           current_timestamp
+       );
+insert into product (
+    product_title,
+    product_description,
+    product_category,
+    product_price,
+    product_stock,
+    product_image,
+    discount,
+    discount_price,
+    is_active,
+    created_at,
+    updated_at
+)
+values (
+           'Out of Stock Shirt',
+           'Seeded E2E product that is out of stock.',
+           'Shirts',
+           12.99,
+           0,
+           'white-shirt.png',
+           0,
+           12.99,
            true,
            current_timestamp,
            current_timestamp

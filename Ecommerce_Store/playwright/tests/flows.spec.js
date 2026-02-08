@@ -127,6 +127,104 @@ test.describe('E2E flows', () => {
         await expect(page).toHaveURL(/\/(products|)$/);
     });
 
+    test('login fails with wrong password', async ({ page }) => {
+        const user = buildTestUser();
+        await registerUser(page, user);
+
+        await page.goto('/signin');
+        await page.locator('input[name="username"]').fill(user.email);
+        await page.locator('input[name="password"]').fill('wrong-password');
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await expect(page).toHaveURL(/signin\?error/);
+        await expect(page.locator('body')).toContainText('Bad credentials');
+    });
+
+    test('login fails for unknown email', async ({ page }) => {
+        await page.goto('/signin');
+        await page.locator('input[name="username"]').fill('unknown@example.com');
+        await page.locator('input[name="password"]').fill('wrong-password');
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await expect(page).toHaveURL(/signin\?error/);
+        await expect(page.locator('body')).toContainText('Email & Password Invalid!');
+    });
+
+    test('login fails for locked user', async ({ page }) => {
+        await page.goto('/signin');
+        await page.locator('input[name="username"]').fill('locked.user@example.com');
+        await page.locator('input[name="password"]').fill('AnyPassword123!');
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await expect(page).toHaveURL(/signin\?error/);
+        await expect(page.locator('body')).toContainText('Your account is Locked! Please try after sometimes');
+    });
+
+    test('login unlocks account after lock time expiry', async ({ page }) => {
+        await page.goto('/signin');
+        await page.locator('input[name="username"]').fill('unlock.user@example.com');
+        await page.locator('input[name="password"]').fill('Admin2!');
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await expect(page).toHaveURL(/signin\?error/);
+        await expect(page.locator('body')).toContainText('Your account is UnLocked, Now you can login to system');
+
+        await page.locator('input[name="username"]').fill('unlock.user@example.com');
+        await page.locator('input[name="password"]').fill('Admin2!');
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await expect(page).not.toHaveURL(/signin\?error/);
+    });
+
+    test('register rejects existing account', async ({ page }) => {
+        const user = buildTestUser();
+        await registerUser(page, user);
+
+        await page.goto('/register');
+        await page.locator('input[name="name"]').fill(user.name);
+        await page.locator('input[name="mobile"]').fill(user.mobile);
+        await page.locator('input[name="email"]').fill(user.email);
+        await page.locator('input[name="address"]').fill(user.address);
+        await page.locator('input[name="city"]').fill(user.city);
+        await page.locator('input[name="state"]').fill(user.state);
+        await page.locator('input[name="pinCode"]').fill(user.pinCode);
+        await page.locator('input[name="password"]').fill(user.password);
+        await page.locator('input[name="confirmPassword"]').fill(user.password);
+        await page.getByRole('button', { name: 'Register' }).click();
+        await expect(page.locator('body')).toContainText('Account already exists.');
+    });
+
+    test('register rejects invalid email', async ({ page }) => {
+        const user = buildTestUser();
+        await page.goto('/register');
+        await page.locator('input[name="name"]').fill(user.name);
+        await page.locator('input[name="mobile"]').fill(user.mobile);
+        await page.locator('input[name="email"]').fill('invalid-email');
+        await page.locator('input[name="address"]').fill(user.address);
+        await page.locator('input[name="city"]').fill(user.city);
+        await page.locator('input[name="state"]').fill(user.state);
+        await page.locator('input[name="pinCode"]').fill(user.pinCode);
+        await page.locator('input[name="password"]').fill(user.password);
+        await page.locator('input[name="confirmPassword"]').fill(user.password);
+        await page.getByRole('button', { name: 'Register' }).click();
+        const emailInput = page.locator('input[name="email"]');
+        await expect(emailInput).toBeVisible();
+        const isValid = await emailInput.evaluate((el) => el.validity.valid);
+        await expect(isValid).toBe(false);
+        await expect(page).toHaveURL(/\/register/);
+    });
+
+    test('register rejects missing required fields', async ({ page }) => {
+        const user = buildTestUser();
+        await page.goto('/register');
+        await page.locator('input[name="name"]').fill(user.name);
+        await page.locator('input[name="mobile"]').fill(user.mobile);
+        await page.locator('input[name="email"]').fill(user.email);
+        await page.locator('input[name="address"]').fill('');
+        await page.locator('input[name="city"]').fill(user.city);
+        await page.locator('input[name="state"]').fill(user.state);
+        await page.locator('input[name="pinCode"]').fill(user.pinCode);
+        await page.locator('input[name="password"]').fill(user.password);
+        await page.locator('input[name="confirmPassword"]').fill(user.password);
+        await page.getByRole('button', { name: 'Register' }).click();
+        await expect(page.locator('body')).toContainText('Invalid registration details.');
+    });
+
     test('add-to-cart flow', async ({ page }) => {
         const user = buildTestUser();
         await registerUser(page, user);
@@ -325,26 +423,9 @@ test.describe('E2E flows', () => {
     });
 
     test('out-of-stock product blocks add-to-cart', async ({ page }) => {
-        await page.goto('/products');
-        const detailLinks = page.getByRole('link', { name: 'Details' });
-        const totalLinks = await detailLinks.count();
-
-        let foundOutOfStock = false;
-        for (let i = 0; i < Math.min(totalLinks, 5); i += 1) {
-            await detailLinks.nth(i).click();
-            const outOfStockButton = page.getByRole('link', { name: 'Out of Stock' });
-            if (await outOfStockButton.isVisible()) {
-                foundOutOfStock = true;
-                await expect(page.getByRole('button', { name: 'Add To Cart' })).toHaveCount(0);
-                break;
-            }
-            await page.goto('/products');
-        }
-
-        if (!foundOutOfStock) {
-            test.skip(true, 'No out-of-stock products available to validate add-to-cart blocking.');
-            return;
-        }
+        await openProductByName(page, 'Out of Stock Shirt');
+        await expect(page.getByRole('link', { name: 'Out of Stock' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Add To Cart' })).toHaveCount(0);
     });
 
     test('quantity increase beyond stock shows error', async ({ page }) => {
@@ -365,6 +446,35 @@ test.describe('E2E flows', () => {
         await expect(page.locator('body')).toContainText('Requested quantity is unavailable.');
     });
 
+    test('cart totals combine multiple products', async ({ page }) => {
+        const user = buildTestUser();
+        await registerUser(page, user);
+        await loginUser(page, user);
+
+        await openProductByName(page, 'White Shirt');
+        await addProductToCartFromDetail(page, 1);
+
+        await openProductByName(page, 'White Jeans');
+        await addProductToCartFromDetail(page, 1);
+
+        await page.goto('/user/cart');
+
+        const expectedProducts = ['White Shirt', 'White Jeans'];
+        let lineTotalSum = 0;
+
+        for (const productName of expectedProducts) {
+            const row = page.locator('table tbody tr', { hasText: productName }).first();
+            await expect(row, `Expected cart row for ${productName}.`).toBeVisible();
+            const totalText = await row.locator('td').nth(4).innerText();
+            lineTotalSum += parsePrice(totalText);
+        }
+
+        const totalRow = page.locator('table tfoot tr', { hasText: 'Total Price' });
+        const orderTotalText = await totalRow.locator('td').last().innerText();
+        const orderTotal = parsePrice(orderTotalText);
+        await expect(orderTotal).toBeCloseTo(lineTotalSum, 2);
+    });
+
     test('removing item shows empty cart state', async ({ page }) => {
         const user = buildTestUser();
         await registerUser(page, user);
@@ -377,6 +487,7 @@ test.describe('E2E flows', () => {
         await page.locator('table tbody tr').first().getByRole('link').first().click();
         const cartRows = page.locator('table tbody tr');
         await expect(cartRows).toHaveCount(0);
+        await expect(page.locator('body')).toContainText('Your cart is empty.');
     });
 
     test('cart contents persist after reload and totals stay consistent', async ({ page }) => {
@@ -397,13 +508,14 @@ test.describe('E2E flows', () => {
         let lineTotalSum = 0;
         let unitPrice = null;
 
+
         for (let i = 0; i < productRowCount; i += 1) {
             const row = productRows.nth(i);
-            const quantityText = await row.locator('td').nth(3).innerText();
+            const quantityText = await row.locator('.cart-quantity').innerText();
             const priceText = await row.locator('td').nth(2).innerText();
             const totalText = await row.locator('td').nth(4).innerText();
 
-            const quantity = Number(quantityText.match(/\\d+/)?.[0] ?? 0);
+            const quantity = Number(quantityText.trim());
             const price = parsePrice(priceText);
             const total = parsePrice(totalText);
 
@@ -417,12 +529,15 @@ test.describe('E2E flows', () => {
         await expect(totalQuantity).toBe(2);
         await expect(lineTotalSum).toBeCloseTo((unitPrice ?? 0) * totalQuantity, 2);
 
-        const totalRow = page.locator('table tbody tr', { hasText: 'Total Price' });
+        const totalRow = page.locator('table tfoot tr', { hasText: 'Total Price' });
         const orderTotalText = await totalRow.locator('td').last().innerText();
         const orderTotal = parsePrice(orderTotalText);
         await expect(orderTotal).toBeCloseTo(lineTotalSum, 2);
 
         await page.reload();
+
+        await expect(page.locator('table tbody tr', { hasText: 'White Shirt' }).first()).toBeVisible();
+
         const reloadedRows = page.locator('table tbody tr', { hasText: 'White Shirt' });
         const reloadedCount = await reloadedRows.count();
         await expect(reloadedCount).toBeGreaterThan(0);
@@ -432,14 +547,56 @@ test.describe('E2E flows', () => {
 
         for (let i = 0; i < reloadedCount; i += 1) {
             const row = reloadedRows.nth(i);
-            const quantityText = await row.locator('td').nth(3).innerText();
+            const quantityText = await row.locator('.cart-quantity').innerText();
             const totalText = await row.locator('td').nth(4).innerText();
-            reloadedQuantity += Number(quantityText.match(/\\d+/)?.[0] ?? 0);
+            reloadedQuantity += Number(quantityText.trim());
             reloadedTotal += parsePrice(totalText);
         }
 
         await expect(reloadedQuantity).toBe(totalQuantity);
         await expect(reloadedTotal).toBeCloseTo(lineTotalSum, 2);
+    });
+
+    test('inactive category stays hidden on products page', async ({ page }) => {
+        await loginWithCredentials(page, adminCredentials);
+
+        const timestamp = Date.now();
+        const categoryName = `Hidden Category ${timestamp}`;
+
+        await page.goto('/admin/add-category');
+        await page.locator('input[name="categoryName"]').fill(categoryName);
+        await page.locator('input[name="isActive"][value="false"]').check();
+        await page.setInputFiles('input[name="file"]', getFixturePath('banner1.jpg'));
+        await Promise.all([
+            page.waitForURL(/\/admin\/category/),
+            page.getByRole('button', { name: 'ADD' }).click(),
+        ]);
+
+        await page.goto('/products');
+        await expect(page.getByRole('link', { name: categoryName })).toHaveCount(0);
+    });
+
+    test('inactive product stays hidden on products page', async ({ page }) => {
+        await loginWithCredentials(page, adminCredentials);
+
+        const timestamp = Date.now();
+        const productTitle = `Hidden Product ${timestamp}`;
+
+        await page.goto('/admin/add-product');
+        await page.locator('input[name="productTitle"]').fill(productTitle);
+        await page.locator('textarea[name="productDescription"]').fill('Inactive product for visibility test.');
+        await page.locator('select[name="productCategory"]').selectOption({ label: 'Shirts' });
+        await page.locator('input[name="productPrice"]').fill('15.75');
+        await page.locator('input[name="productStock"]').fill('4');
+        await page.locator('input[name="isActive"][value="false"]').check();
+        await page.setInputFiles('input[name="file"]', getFixturePath('banner2.jpg'));
+        await Promise.all([
+            page.waitForURL(/\/admin\/product-list/),
+            page.getByRole('button', { name: 'Submit' }).click(),
+        ]);
+
+        await page.goto('/products');
+        await expect(page.getByText(productTitle, { exact: false })).toHaveCount(0);
     });
 
     test('category filter updates product listing URL', async ({ page }) => {
@@ -462,6 +619,29 @@ test.describe('E2E flows', () => {
         await page.locator('input[name="search"]').fill('shirt');
         await page.getByRole('button', { name: 'Search Product' }).click();
         await expect(page).toHaveURL(/search=/);
+    });
+
+    test('search returns expected product', async ({ page }) => {
+        await page.goto('/products');
+        await page.locator('input[name="search"]').fill('White Shirt');
+        await page.getByRole('button', { name: 'Search Product' }).click();
+        await expect(page.getByText('White Shirt', { exact: false })).toBeVisible();
+    });
+
+    test('search by keyword returns multiple products', async ({ page }) => {
+        await page.goto('/products');
+        await page.locator('input[name="search"]').fill('white');
+        await page.getByRole('button', { name: 'Search Product' }).click();
+        await expect(page.getByText('White Shirt', { exact: false })).toBeVisible();
+        await expect(page.getByText('White Jeans', { exact: false })).toBeVisible();
+        await expect(page.getByText('White Shorts', { exact: false })).toBeVisible();
+    });
+
+    test('search with no results shows empty state', async ({ page }) => {
+        await page.goto('/products');
+        await page.locator('input[name="search"]').fill('no-such-product');
+        await page.getByRole('button', { name: 'Search Product' }).click();
+        await expect(page.locator('body')).toContainText('No Products Found.');
     });
 
     test('product detail shows price and discount formatting', async ({ page }) => {

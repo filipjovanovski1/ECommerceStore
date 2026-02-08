@@ -128,7 +128,7 @@ public class ProductServiceImpl implements ProductService{
 		if(ObjectUtils.isEmpty(category)) {
 			products = productRepository.findByIsActiveTrue();
 		}else {
-			products =productRepository.findByProductCategory(category);
+			products =productRepository.findByIsActiveTrueAndProductCategory(category);
 		}
 		
 		return products;

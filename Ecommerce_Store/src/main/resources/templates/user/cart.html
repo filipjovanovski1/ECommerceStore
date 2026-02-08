@@ -50,6 +50,9 @@
 						</th:block>
 
 						<div class="card-body">
+							<th:block th:if="${carts.size == 0}">
+								<p class="fs-5 text-danger text-center mt-3">Your cart is empty.</p>
+							</th:block>
 							<table class="table">
 								<thead>
 									<tr>
@@ -70,7 +73,8 @@
 										<td>[[${#numbers.formatDecimal(cart.product.discountPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
 										
 										<td class="text-center"><a th:href="@{'/user/cart-quantity-update?symbol=decrease&cartId='+${cart.id}}" style="text-decoration:none;">
-										<i class="fa-solid fa-minus"></i></a> [ [[${cart.quantity}]] ] 
+											<i class="fa-solid fa-minus"></i></a>
+											<span class="mx-1 cart-quantity" th:text="${cart.quantity}">0</span>
 										<a th:href="@{'/user/cart-quantity-update?symbol=increase&cartId='+${cart.id}}" style="text-decoration:none;"><i class="fa-solid fa-plus"></i></a>
 										</td>
 
@@ -78,14 +82,15 @@
 										
 										
 									</tr>
-
-									<tr th:if="${carts.size > 0}">
-										<td colspan="4"></td>
-										<td class="fw-bold">Total Price</td>
-										<td class="fw-bold">$ [[${#numbers.formatDecimal(totalOrderPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
-									</tr>
-									
 								</tbody>
+									<tfoot>
+							<tr th:if="${carts.size > 0}">
+								<td colspan="4"></td>
+								<td class="fw-bold">Total Price</td>
+								<td class="fw-bold">$ [[${#numbers.formatDecimal(totalOrderPrice, 1, 'COMMA', 2, 'POINT')}]]</td>
+							</tr>
+							</tfoot>
+
 							</table>
 							<div class="text-center"><a href="/user/orders" class="btn btn-warning">Proceed Payment</a></div>
 						</div>

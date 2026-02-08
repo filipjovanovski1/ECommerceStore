@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import com.mdtalalwasim.ecommerce.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,10 +19,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mdtalalwasim.ecommerce.entity.Category;
 import com.mdtalalwasim.ecommerce.entity.Product;
-import com.mdtalalwasim.ecommerce.service.CartService;
-import com.mdtalalwasim.ecommerce.service.CategoryService;
-import com.mdtalalwasim.ecommerce.service.ProductService;
-import com.mdtalalwasim.ecommerce.service.UserService;
 import com.mdtalalwasim.ecommerce.utils.CommonUtils;
 
 @WebMvcTest(HomeViewController.class)
@@ -48,6 +45,9 @@ class HomeViewControllerTest {
 
     @MockBean
     private PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private EmailService emailService;
 
     @Test
     void homeIndexLoadsLatestCategoriesAndProducts() throws Exception {

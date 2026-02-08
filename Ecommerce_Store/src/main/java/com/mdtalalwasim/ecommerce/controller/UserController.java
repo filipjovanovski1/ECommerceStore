@@ -65,14 +65,18 @@ public class UserController {
 	
 	//ADD TO CART Module
 	@GetMapping("/add-to-cart")
-	String addToCart(@RequestParam Long productId, @RequestParam Long userId,
+	String addToCart(@RequestParam Long productId, @RequestParam(required = false) Long userId,
 					 @RequestParam(defaultValue = "1") int quantity, HttpSession session,
 					 HttpServletRequest request, Principal principal) {
 		System.out.println("INSIDE ITS");
 
 		String redirectTarget = "/product/" + productId;
+		Long resolvedUserId = userId;
 		if (principal != null) {
 			User currentUser = userService.getUserByEmail(principal.getName());
+			if (currentUser != null) {
+				resolvedUserId = currentUser.getId();
+			}
 			if (currentUser != null && "ROLE_ADMIN".equals(currentUser.getRole())) {
 				String referer = request.getHeader("Referer");
 				if (!ObjectUtils.isEmpty(referer)) {
@@ -87,11 +91,16 @@ public class UserController {
 			redirectTarget = "redirect:" + redirectTarget;
 		}
 
+		if (resolvedUserId == null) {
+			session.setAttribute("errorMsg", "Please sign in to add items to your cart.");
+			return "redirect:/signin";
+		}
+
 		if (quantity <= 0) {
 			session.setAttribute("errorMsg", "Quantity must be at least 1.");
 			return redirectTarget;
 		}
-		Cart saveCart = cartService.saveCart(productId, userId, quantity);
+		Cart saveCart = cartService.saveCart(productId, resolvedUserId, quantity);
 
 		//System.out.println("save Cart is :"+saveCart);
 		if(ObjectUtils.isEmpty(saveCart)) {

@@ -139,7 +139,24 @@ public class HomeViewController {
 	@PostMapping("/save-user")
 	public String saveUserDetails(@ModelAttribute User user, @RequestParam("file") MultipartFile file, Model model, HttpSession session) throws IOException 
 	{
-		
+		if (ObjectUtils.isEmpty(user.getName())
+				|| ObjectUtils.isEmpty(user.getEmail())
+				|| ObjectUtils.isEmpty(user.getMobile())
+				|| ObjectUtils.isEmpty(user.getAddress())
+				|| ObjectUtils.isEmpty(user.getCity())
+				|| ObjectUtils.isEmpty(user.getState())
+				|| ObjectUtils.isEmpty(user.getPinCode())
+				|| ObjectUtils.isEmpty(user.getPassword())
+				|| !user.getEmail().contains("@")) {
+			session.setAttribute("errorMsg", "Invalid registration details.");
+			return "redirect:/register";
+		}
+
+		if (!ObjectUtils.isEmpty(userService.getUserByEmail(user.getEmail()))) {
+			session.setAttribute("errorMsg", "Account already exists.");
+			return "redirect:/register";
+		}
+
 		String profileImage = file.isEmpty() ? "default.jpg" : file.getOriginalFilename();
 		user.setProfileImage(profileImage);
 		
