@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +22,6 @@ import com.mdtalalwasim.ecommerce.entity.User;
 import com.mdtalalwasim.ecommerce.repository.CartRepository;
 import com.mdtalalwasim.ecommerce.repository.ProductRepository;
 import com.mdtalalwasim.ecommerce.repository.UserRepository;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceImplTest {
@@ -67,6 +67,31 @@ class CartServiceImplTest {
     }
 
     @Test
+    void saveCartUpdatesExistingItemQuantity() {
+        User user = new User();
+        user.setId(7L);
+
+        Product product = new Product();
+        product.setId(5L);
+        product.setProductStock(10);
+        product.setDiscountPrice(30.0);
+
+        Cart existing = new Cart();
+        existing.setQuantity(2);
+        existing.setProduct(product);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(productRepository.findById(5L)).thenReturn(Optional.of(product));
+        when(cartRepository.findByProductIdAndUserId(5L, 7L)).thenReturn(existing);
+        when(cartRepository.save(existing)).thenReturn(existing);
+
+        Cart saved = cartService.saveCart(5L, 7L, 3);
+
+        assertThat(saved).isEqualTo(existing);
+        assertThat(existing.getQuantity()).isEqualTo(5);
+        assertThat(existing.getTotalPrice()).isEqualTo(150.0);
+    }
+
+    @Test
     void saveCartReturnsNullWhenStockIsInsufficient() {
         User user = new User();
         user.setId(7L);
@@ -104,6 +129,21 @@ class CartServiceImplTest {
     }
 
     @Test
+    void updateCartQuantityDecreasePersistsWhenAboveZero() {
+        Cart cart = new Cart();
+        cart.setId(10L);
+        cart.setQuantity(3);
+
+        when(cartRepository.findById(10L)).thenReturn(Optional.of(cart));
+
+        boolean result = cartService.updateCartQuantity("decrease", 10L);
+
+        assertThat(result).isTrue();
+        assertThat(cart.getQuantity()).isEqualTo(2);
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
     void updateCartQuantityBlocksIncreaseBeyondStock() {
     Product product = new Product();
         product.setProductStock(2);
@@ -119,6 +159,35 @@ class CartServiceImplTest {
         assertThat(result).isFalse();
         verify(cartRepository, never()).save(any(Cart.class));
     }
+
+    @Test
+    void updateCartQuantityIncreaseSavesWhenStockAvailable() {
+        Product product = new Product();
+        product.setProductStock(4);
+        Cart cart = new Cart();
+        cart.setId(12L);
+        cart.setQuantity(2);
+        cart.setProduct(product);
+
+        when(cartRepository.findById(12L)).thenReturn(Optional.of(cart));
+
+        boolean result = cartService.updateCartQuantity("increase", 12L);
+
+        assertThat(result).isTrue();
+        assertThat(cart.getQuantity()).isEqualTo(3);
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void updateCartQuantityReturnsFalseWhenMissingCart() {
+        when(cartRepository.findById(99L)).thenReturn(Optional.empty());
+
+        boolean result = cartService.updateCartQuantity("increase", 99L);
+
+        assertThat(result).isFalse();
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
     @Test
     void checkoutCartDeductsStockAndClearsCart() {
         Product product = new Product();
@@ -140,5 +209,15 @@ class CartServiceImplTest {
         verify(productRepository).save(productCaptor.capture());
         assertThat(productCaptor.getValue().getProductStock()).isEqualTo(0);
         verify(cartRepository).deleteByUserId(99L);
+    }
+
+    @Test
+    void checkoutCartReturnsFalseWhenCartEmpty() {
+        when(cartRepository.findByUserId(3L)).thenReturn(List.of());
+
+        boolean result = cartService.checkoutCart(3L);
+
+        assertThat(result).isFalse();
+        verify(cartRepository, never()).deleteByUserId(3L);
     }
 }

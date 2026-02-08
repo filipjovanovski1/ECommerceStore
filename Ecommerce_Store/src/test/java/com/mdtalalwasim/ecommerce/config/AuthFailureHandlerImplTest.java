@@ -102,4 +102,46 @@ class AuthFailureHandlerImplTest {
         verify(userService, never()).userAccountLock(user);
         assertThat(response.getRedirectedUrl()).isEqualTo("/signin?error");
     }
+
+    @Test
+    void lockedAccountTriggersUnlockCheck() throws Exception {
+        User user = new User();
+        user.setIsEnable(true);
+        user.setAccountStatusNonLocked(false);
+
+        when(userRepository.findByEmail("locked@shop.test")).thenReturn(user);
+        when(userService.isUnlockAccountTimeExpired(user)).thenReturn(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("username", "locked@shop.test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        authFailureHandler.onAuthenticationFailure(request, response, new BadCredentialsException("bad"));
+
+        verify(userService).isUnlockAccountTimeExpired(user);
+        verify(userService, never()).userFailedAttemptIncrease(user);
+        verify(userService, never()).userAccountLock(user);
+        assertThat(response.getRedirectedUrl()).isEqualTo("/signin?error");
+    }
+
+    @Test
+    void lockedAccountRemainsLockedWhenTimeNotExpired() throws Exception {
+        User user = new User();
+        user.setIsEnable(true);
+        user.setAccountStatusNonLocked(false);
+
+        when(userRepository.findByEmail("locked@shop.test")).thenReturn(user);
+        when(userService.isUnlockAccountTimeExpired(user)).thenReturn(false);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("username", "locked@shop.test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        authFailureHandler.onAuthenticationFailure(request, response, new BadCredentialsException("bad"));
+
+        verify(userService).isUnlockAccountTimeExpired(user);
+        verify(userService, never()).userFailedAttemptIncrease(user);
+        verify(userService, never()).userAccountLock(user);
+        assertThat(response.getRedirectedUrl()).isEqualTo("/signin?error");
+    }
 }

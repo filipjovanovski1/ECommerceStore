@@ -3,6 +3,7 @@ package com.mdtalalwasim.ecommerce.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.mockito.ArgumentMatchers.any;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 import com.mdtalalwasim.ecommerce.entity.User;
 import com.mdtalalwasim.ecommerce.repository.UserRepository;
@@ -90,6 +93,54 @@ class UserServiceImplTest {
     }
 
     @Test
+    void isUnlockAccountTimeExpiredReturnsFalseWhenStillLocked() {
+        User user = new User();
+        user.setAccountStatusNonLocked(false);
+        user.setAccountfailedAttemptCount(2);
+        user.setAccountLockTime(new Date(System.currentTimeMillis() - 1000));
+
+        boolean result = userService.isUnlockAccountTimeExpired(user);
+
+        assertThat(result).isFalse();
+        verify(userRepository, never()).save(user);
+    }
+
+    @Test
+    void getAllUsersByRoleReturnsRepositoryResults() {
+        User user = new User();
+        user.setRole("ROLE_USER");
+        when(userRepository.findByRole("ROLE_USER")).thenReturn(List.of(user));
+
+        List<User> result = userService.getAllUsersByRole("ROLE_USER");
+
+        assertThat(result).containsExactly(user);
+        verify(userRepository).findByRole("ROLE_USER");
+    }
+
+    @Test
+    void updateUserStatusUpdatesAndReturnsTrueWhenUserExists() {
+        User user = new User();
+        user.setIsEnable(false);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(user));
+
+        Boolean result = userService.updateUserStatus(true, 3L);
+
+        assertThat(result).isTrue();
+        assertThat(user.getIsEnable()).isTrue();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateUserStatusReturnsFalseWhenMissing() {
+        when(userRepository.findById(77L)).thenReturn(Optional.empty());
+
+        Boolean result = userService.updateUserStatus(true, 77L);
+
+        assertThat(result).isFalse();
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void updateUserResetTokenForSendingEmailStoresToken() {
         User user = new User();
         user.setEmail("user@shop.test");
@@ -111,5 +162,17 @@ class UserServiceImplTest {
 
         assertThat(result).isEqualTo(user);
         verify(userRepository).findByResetTokens("token-123");
+    }
+
+    @Test
+    void updateUserWhileResetingPasswordPersistsUser() {
+        User user = new User();
+        user.setEmail("user@shop.test");
+        when(userRepository.save(user)).thenReturn(user);
+
+        User result = userService.updateUserWhileResetingPassword(user);
+
+        assertThat(result).isEqualTo(user);
+        verify(userRepository).save(user);
     }
 }

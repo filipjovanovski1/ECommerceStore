@@ -3,6 +3,7 @@ package com.mdtalalwasim.ecommerce.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -35,6 +36,22 @@ class AuthSuccessHandlerImplTest {
                 "user@shop.test",
                 "password",
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        assertThat(response.getRedirectedUrl()).isEqualTo("/");
+    }
+
+    @Test
+    void redirectsUnknownRolesToHome() throws Exception {
+        AuthSuccessHandlerImpl handler = new AuthSuccessHandlerImpl();
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "guest@shop.test",
+                "password",
+                Collections.emptyList());
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();

@@ -4,7 +4,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -97,6 +96,23 @@ class UserControllerTest {
     }
 
     @Test
+    void addToCartSetsErrorMessageWhenInventoryUnavailable() throws Exception {
+        User user = new User();
+        user.setId(10L);
+        when(categoryService.findAllActiveCategory()).thenReturn(List.of());
+        when(userService.getUserByEmail("user@shop.test")).thenReturn(user);
+        when(cartService.saveCart(15L, 10L, 1)).thenReturn(null);
+
+        mockMvc.perform(get("/user/add-to-cart")
+                        .principal(() -> "user@shop.test")
+                        .param("productId", "15")
+                        .param("quantity", "1"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/product/15"))
+                .andExpect(request().sessionAttribute("errorMsg", "Requested quantity is unavailable."));
+    }
+
+    @Test
     void modelAttributePopulatesUserAndCartDetails() {
         User user = new User();
         user.setId(3L);
@@ -140,5 +156,47 @@ class UserControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/user/cart"))
                 .andExpect(request().sessionAttribute("errorMsg", "Requested quantity is unavailable."));
+    }
+
+    @Test
+    void updateCartQuantityIncreaseSuccessDoesNotSetError() throws Exception {
+        when(categoryService.findAllActiveCategory()).thenReturn(List.of());
+        when(cartService.updateCartQuantity("increase", 7L)).thenReturn(true);
+
+        mockMvc.perform(get("/user/cart-quantity-update")
+                        .param("symbol", "increase")
+                        .param("cartId", "7"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/cart"))
+                .andExpect(request().sessionAttributeDoesNotExist("errorMsg"));
+    }
+
+    @Test
+    void updateCartQuantityDecreaseDoesNotSetError() throws Exception {
+        when(categoryService.findAllActiveCategory()).thenReturn(List.of());
+        when(cartService.updateCartQuantity("decrease", 9L)).thenReturn(false);
+
+        mockMvc.perform(get("/user/cart-quantity-update")
+                        .param("symbol", "decrease")
+                        .param("cartId", "9"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/cart"))
+                .andExpect(request().sessionAttributeDoesNotExist("errorMsg"));
+    }
+
+    @Test
+    void orderPageRedirectsToSuccessWhenCheckoutSucceeds() throws Exception {
+        User user = new User();
+        user.setId(22L);
+        when(categoryService.findAllActiveCategory()).thenReturn(List.of());
+        when(userService.getUserByEmail("user@shop.test")).thenReturn(user);
+        when(cartService.getCounterCart(22L)).thenReturn(2L);
+        when(cartService.checkoutCart(22L)).thenReturn(true);
+
+        mockMvc.perform(get("/user/orders")
+                        .principal(() -> "user@shop.test"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/order-success"))
+                .andExpect(request().sessionAttribute("successMsg", "Order placed successfully."));
     }
 }
