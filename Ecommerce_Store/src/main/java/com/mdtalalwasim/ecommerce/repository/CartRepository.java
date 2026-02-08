@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.mdtalalwasim.ecommerce.entity.Cart;
 import com.mdtalalwasim.ecommerce.entity.Product;
 import com.mdtalalwasim.ecommerce.entity.User;
+import org.springframework.data.jpa.repository.Query;
 
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long>{
@@ -16,6 +17,9 @@ public interface CartRepository extends JpaRepository<Cart, Long>{
 	//public Cart findByProductAndUser(Product product, User user);
 
 	public Long countByUserId(Long userId);
+
+	@Query("select coalesce(sum(c.quantity), 0) from Cart c where c.user.id = ?1")
+	Long sumQuantityByUserId(Long userId);
 
 	public List<Cart> findByUserId(Long userId);
 

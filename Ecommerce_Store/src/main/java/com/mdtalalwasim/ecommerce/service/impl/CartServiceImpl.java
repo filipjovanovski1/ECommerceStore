@@ -101,8 +101,7 @@ public class CartServiceImpl implements CartService{
 
 	@Override
 	public Long getCounterCart(Long userId) {
-		Long cartCountByUserId = cartRepository.countByUserId(userId);
-		return cartCountByUserId;
+		return cartRepository.sumQuantityByUserId(userId);
 	}
 
 	@Override

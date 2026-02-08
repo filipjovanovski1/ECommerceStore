@@ -8,9 +8,12 @@ These Playwright tests cover the following flows:
 
 ## Prerequisites
 
-1. Start the Spring Boot app locally (default port 8080).
-2. Ensure the database has at least one active product so the test can open a product detail page.
+1. Start the Spring Boot app locally (default port 8080) with the `e2e` profile so the reset endpoint and seed data are available:
 
+   ```bash
+   SPRING_PROFILES_ACTIVE=e2e ./mvnw spring-boot:run
+   ```
+2. The `e2e` profile seeds a `White Shirt` product with high stock and exposes `/e2e/reset` for test resets.
 ## Install dependencies
 
 ```bash

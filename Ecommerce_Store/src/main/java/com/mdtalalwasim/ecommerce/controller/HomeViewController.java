@@ -11,6 +11,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
+
+import com.mdtalalwasim.ecommerce.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -51,7 +53,7 @@ public class HomeViewController {
 	UserService userService;
 	
 	@Autowired
-	CommonUtils commonUtils;
+	private EmailService emailService;
 	
 	@Autowired
 	CartService cartService;
@@ -195,7 +197,7 @@ public class HomeViewController {
 			
 			
 			//Boolean isEmailSendToUser = CommonUtils.sendEmail(url, email);
-			Boolean isEmailSendToUser = commonUtils.sendEmail(url, email);
+			Boolean isEmailSendToUser = emailService.sendPasswordResetEmail(email, url);
 			
 			if(isEmailSendToUser == true) {
 				session.setAttribute("successMsg", "Please check your email, Password Reset Link has been sent to your email.");

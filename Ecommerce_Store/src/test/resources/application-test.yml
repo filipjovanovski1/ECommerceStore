@@ -1,0 +1,10 @@
+spring:
+  mail:
+    host: localhost
+    port: 1025
+
+app:
+  mail:
+    from-address: test@ecommerce.local
+    from-name: Ecommerce Store Test
+    reset-subject: Test Password Reset
