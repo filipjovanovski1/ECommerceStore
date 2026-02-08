@@ -28,7 +28,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import com.mdtalalwasim.ecommerce.entity.Category;
 import com.mdtalalwasim.ecommerce.entity.Product;
 import com.mdtalalwasim.ecommerce.entity.User;
-import com.mdtalalwasim.ecommerce.utils.CommonUtils;
 
 @WebMvcTest(HomeViewController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -45,9 +44,6 @@ class HomeViewControllerTest {
 
     @MockBean
     private UserService userService;
-
-    @MockBean
-    private CommonUtils commonUtils;
 
     @MockBean
     private CartService cartService;
