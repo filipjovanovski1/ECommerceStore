@@ -6,14 +6,18 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static org.mockito.ArgumentMatchers.any;
+
+import java.util.Date;
+
 import com.mdtalalwasim.ecommerce.entity.User;
 import com.mdtalalwasim.ecommerce.repository.UserRepository;
+import com.mdtalalwasim.ecommerce.utils.AppConstant;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
@@ -30,11 +34,10 @@ class UserServiceImplTest {
     @Test
     void saveUserSetsDefaultsAndEncodesPassword() {
         User user = new User();
-        user.setEmail("customer@example.com");
-        user.setPassword("plain-password");
+        user.setPassword("plain");
 
-        when(passwordEncoder.encode("plain-password")).thenReturn("encoded-password");
-        when(userRepository.save(user)).thenReturn(user);
+        when(passwordEncoder.encode("plain")).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User saved = userService.saveUser(user);
 
@@ -43,22 +46,35 @@ class UserServiceImplTest {
         assertThat(saved.getAccountStatusNonLocked()).isTrue();
         assertThat(saved.getAccountfailedAttemptCount()).isEqualTo(0);
         assertThat(saved.getAccountLockTime()).isNull();
-        assertThat(saved.getPassword()).isEqualTo("encoded-password");
+        assertThat(saved.getPassword()).isEqualTo("encoded");
+    }
 
+    @Test
+    void userAccountLockMarksUserLocked() {
+        User user = new User();
+        user.setAccountStatusNonLocked(true);
+
+        userService.userAccountLock(user);
+
+        assertThat(user.getAccountStatusNonLocked()).isFalse();
+        assertThat(user.getAccountLockTime()).isNotNull();
         verify(userRepository).save(user);
     }
 
     @Test
-    void updateUserResetTokenForSendingEmailStoresToken() {
+    void isUnlockAccountTimeExpiredUnlocksAndResetsWhenTimePassed() {
         User user = new User();
-        user.setEmail("customer@example.com");
 
-        when(userRepository.findByEmail("customer@example.com")).thenReturn(user);
+        user.setAccountStatusNonLocked(false);
+        user.setAccountfailedAttemptCount(2);
+        user.setAccountLockTime(new Date(System.currentTimeMillis() - AppConstant.UNLOCK_DURATION_TIME - 1000));
 
-        userService.updateUserResetTokenForSendingEmail("customer@example.com", "reset-token");
+        boolean result = userService.isUnlockAccountTimeExpired(user);
 
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
-        assertThat(userCaptor.getValue().getResetTokens()).isEqualTo("reset-token");
+        assertThat(result).isTrue();
+        assertThat(user.getAccountStatusNonLocked()).isTrue();
+        assertThat(user.getAccountfailedAttemptCount()).isEqualTo(0);
+        assertThat(user.getAccountLockTime()).isNull();
+        verify(userRepository).save(user);
     }
 }

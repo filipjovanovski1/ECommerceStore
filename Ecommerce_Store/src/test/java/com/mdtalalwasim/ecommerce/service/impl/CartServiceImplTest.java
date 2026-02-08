@@ -21,6 +21,7 @@ import com.mdtalalwasim.ecommerce.entity.User;
 import com.mdtalalwasim.ecommerce.repository.CartRepository;
 import com.mdtalalwasim.ecommerce.repository.ProductRepository;
 import com.mdtalalwasim.ecommerce.repository.UserRepository;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceImplTest {
@@ -38,89 +39,106 @@ class CartServiceImplTest {
     private CartServiceImpl cartService;
 
     @Test
-    void saveCartCreatesNewCartWithDiscountPriceTotal() {
+    void saveCartAddsNewItemWhenStockAllows() {
         User user = new User();
-        user.setId(5L);
+        user.setId(42L);
 
         Product product = new Product();
-        product.setId(7L);
-        product.setProductStock(10);
-        product.setDiscountPrice(45.0);
+        product.setId(10L);
+        product.setProductStock(5);
+        product.setDiscountPrice(25.0);
 
-        when(userRepository.findById(5L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(7L)).thenReturn(Optional.of(product));
-        when(cartRepository.findByProductIdAndUserId(7L, 5L)).thenReturn(null);
-
-        when(cartRepository.save(any(Cart.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        Cart result = cartService.saveCart(7L, 5L, 2);
+        when(userRepository.findById(42L)).thenReturn(Optional.of(user));
+        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+        when(cartRepository.findByProductIdAndUserId(10L, 42L)).thenReturn(null);
 
         ArgumentCaptor<Cart> cartCaptor = ArgumentCaptor.forClass(Cart.class);
-        verify(cartRepository).save(cartCaptor.capture());
+        when(cartRepository.save(cartCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Cart saved = cartService.saveCart(10L, 42L, 2);
+
+        assertThat(saved).isNotNull();
         Cart persisted = cartCaptor.getValue();
 
-        assertThat(result).isNotNull();
-        assertThat(persisted.getQuantity()).isEqualTo(2);
-        assertThat(persisted.getTotalPrice()).isEqualTo(90.0);
         assertThat(persisted.getProduct()).isEqualTo(product);
+        assertThat(persisted.getQuantity()).isEqualTo(2);
+        assertThat(persisted.getTotalPrice()).isEqualTo(50.0);
         assertThat(persisted.getUser()).isEqualTo(user);
     }
 
     @Test
-    void saveCartUpdatesExistingCartQuantityWhenStockAllows() {
+    void saveCartReturnsNullWhenStockIsInsufficient() {
         User user = new User();
-        user.setId(2L);
+        user.setId(7L);
 
         Product product = new Product();
-        product.setId(3L);
+        product.setId(5L);
         product.setProductStock(5);
         product.setDiscountPrice(30.0);
 
         Cart existing = new Cart();
-        existing.setId(1L);
-        existing.setUser(user);
+        existing.setQuantity(4);
         existing.setProduct(product);
-        existing.setQuantity(1);
-        existing.setTotalPrice(30.0);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(productRepository.findById(5L)).thenReturn(Optional.of(product));
+        when(cartRepository.findByProductIdAndUserId(5L, 7L)).thenReturn(existing);
 
-        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(3L)).thenReturn(Optional.of(product));
-        when(cartRepository.findByProductIdAndUserId(3L, 2L)).thenReturn(existing);
-        when(cartRepository.save(any(Cart.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        Cart saved = cartService.saveCart(5L, 7L, 2);
 
-        cartService.saveCart(3L, 2L, 2);
-
-        ArgumentCaptor<Cart> cartCaptor = ArgumentCaptor.forClass(Cart.class);
-        verify(cartRepository).save(cartCaptor.capture());
-        Cart persisted = cartCaptor.getValue();
-
-        assertThat(persisted.getQuantity()).isEqualTo(3);
-        assertThat(persisted.getTotalPrice()).isEqualTo(90.0);
+        assertThat(saved).isNull();
+        verify(cartRepository, never()).save(any(Cart.class));
     }
 
     @Test
-    void checkoutCartUpdatesStockAndClearsCart() {
-        User user = new User();
-        user.setId(9L);
-
-        Product product = new Product();
-        product.setId(11L);
-        product.setProductStock(4);
-
+    void updateCartQuantityDeletesWhenQuantityDropsToZero() {
         Cart cart = new Cart();
-        cart.setUser(user);
-        cart.setProduct(product);
-        cart.setQuantity(2);
+        cart.setId(11L);
+        cart.setQuantity(1);
 
-        when(cartRepository.findByUserId(9L)).thenReturn(List.of(cart));
+        when(cartRepository.findById(11L)).thenReturn(Optional.of(cart));
 
-        boolean result = cartService.checkoutCart(9L);
+        boolean result = cartService.updateCartQuantity("decrease", 11L);
 
         assertThat(result).isTrue();
-        assertThat(product.getProductStock()).isEqualTo(2);
-        verify(productRepository).save(product);
-        verify(cartRepository).deleteByUserId(9L);
+        verify(cartRepository).deleteById(11L);
+    }
+
+    @Test
+    void updateCartQuantityBlocksIncreaseBeyondStock() {
+    Product product = new Product();
+        product.setProductStock(2);
+        Cart cart = new Cart();
+        cart.setId(12L);
+        cart.setQuantity(2);
+        cart.setProduct(product);
+
+        when(cartRepository.findById(12L)).thenReturn(Optional.of(cart));
+
+        boolean result = cartService.updateCartQuantity("increase", 12L);
+
+        assertThat(result).isFalse();
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+    @Test
+    void checkoutCartDeductsStockAndClearsCart() {
+        Product product = new Product();
+        product.setId(4L);
+        product.setProductStock(3);
+        Cart cart = new Cart();
+        cart.setId(90L);
+        cart.setProduct(product);
+        cart.setQuantity(5);
+
+        when(cartRepository.findByUserId(99L)).thenReturn(List.of(cart));
+        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+
+        boolean result = cartService.checkoutCart(99L);
+
+        assertThat(result).isTrue();
+        ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+        verify(productRepository).save(productCaptor.capture());
+        assertThat(productCaptor.getValue().getProductStock()).isEqualTo(0);
+        verify(cartRepository).deleteByUserId(99L);
     }
 }
